@@ -1,56 +1,43 @@
+import sqlite3
 import nltk
 nltk.download('wordnet')
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem.wordnet import WordNetLemmatizer
 from gensim.models import Phrases
 from gensim.corpora import Dictionary
+from gensim.models import LdaModel
 
 
-import gzip
-import json
 
-
-class CovidTweets:
+class TweetLDA:
     def __init__(self):
-        self.file = "./data/coronavirus-tweet-id-2020-01-21-22.jsonl.gz"
-        self.data = []
         self.documents = []
 
         self.dictionary = None
         self.corpus = None
         
         # Training parameters
-        num_topics = 10
-        chunksize = 1000
-        passes = 20
-        iterations = 400
-        eval_every = None
+        self.num_topics = 12
+        self.chunksize = 1000
+        self.passes = 20
+        self.iterations = 400
+        self.eval_every = None
 
-           
-    def extract_tweets(self):
-        '''
-        Obtain a list of tweets from a filename
-
-        :update: self.data, list of tweets from file as python dictionaries
-        '''
-        with gzip.open(self.file) as f:
-            tweets_jsonl = f.read().decode("utf-8")
-            tweets_list = tweets_jsonl.split('\n')
-
-            for jline in tweets_list:
-                if jline != "":
-                    current_tweet = json.loads(jline)
-                    if current_tweet['lang'] == 'en':
-                        self.data.append(current_tweet)
+        self.model = None
 
 
     def collect_documents(self):
         '''
-        Generate a list of Strings from list of tweet Dictionaries
+        Generate a list of Strings from list of tweet SQL entries
 
         :update: self.documents, list of Strings
         '''
-        self.documents = [tweet['full_text'] for tweet in self.data]
+        cnxn = sqlite3.connect("covid_tweets.db")
+        cursor = cnxn.cursor()
+
+        self.documents = [t for t, in cursor.execute("SELECT tweet FROM tweets")]
+
+        cnxn.close()
 
 
     def tokenize_documents(self):
@@ -82,8 +69,7 @@ class CovidTweets:
         '''
         Find and save bigrams located in the documents
 
-        :param docs: List, tokenized and lemmatized documents 
-        :return: None
+        :update: self.documents, list of Strings + bigrams
         '''
         bigram = Phrases(self.documents, min_count=20)
 
@@ -121,3 +107,30 @@ class CovidTweets:
         self.compute_bigrams()
 
         self.generate_dictionary()
+
+
+    def generate_model(self):
+        '''
+        Utilizting the python Gensim library and the prepared corpus, create a
+        trained LDA model.
+
+        :update: self.model, LdaModel object
+        '''
+        temp = self.dictionary[0]
+        id2word = self.dictionary.id2token
+
+        self.model = LdaModel(
+            corpus=self.corpus,
+            id2word=id2word,
+            chunksize=self.chunksize,
+            alpha='auto',
+            eta='auto',
+            iterations=self.iterations,
+            num_topics=self.num_topics,
+            passes=self.passes,
+            eval_every=self.eval_every
+        )
+
+
+        return self.model, self.corpus
+
