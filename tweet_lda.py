@@ -1,8 +1,4 @@
 import sqlite3
-import nltk
-nltk.download('wordnet')
-from nltk.tokenize import RegexpTokenizer
-from nltk.stem.wordnet import WordNetLemmatizer
 from gensim.models import Phrases
 from gensim.corpora import Dictionary
 from gensim.models import LdaModel
@@ -40,43 +36,17 @@ class TweetLDA:
         cnxn.close()
 
 
-    def tokenize_documents(self):
-        '''
-        Tokenize the documents
-
-        :update: self.documents, list of tokenized Strings
-        '''
-        tokenizer = RegexpTokenizer(r'\w+')
-        for i in range(len(self.documents)):
-            self.documents[i] = self.documents[i].lower()
-            self.documents[i] = tokenizer.tokenize(self.documents[i])
-
-        self.documents = [[token for token in d if not token.isnumeric()] for d in self.documents]
-        self.documents = [[token for token in d if len(token) > 1] for d in self.documents]
-
-
-    def lemmatize_documents(self):
-        '''
-        Lemmatize the documents (e.g. its => it)
-
-        :update: self.documents, lists of lemmatized Strings
-        '''
-        lemmatizer = WordNetLemmatizer()
-        self.documents = [[lemmatizer.lemmatize(token) for token in d] for d in self.documents]
-
-
     def compute_bigrams(self):
         '''
         Find and save bigrams located in the documents
 
         :update: self.documents, list of Strings + bigrams
         '''
-        bigram = Phrases(self.documents, min_count=20)
+        bigram = Phrases(self.documents, min_count=90)
 
         for i in range(len(self.documents)):
             for token in bigram[self.documents[i]]:
                 if '_' in token:
-                    print("Found bigram:", token)
                     self.documents[i].append(token)
 
 
@@ -89,7 +59,7 @@ class TweetLDA:
         :update: self.corpus, list of Bag-of-Word documents
         '''
         self.dictionary = Dictionary(self.documents)
-        self.dictionary.filter_extremes(no_below=3, no_above=0.75)
+        self.dictionary.filter_extremes(no_below=30, no_above=0.50)
 
         self.corpus = [self.dictionary.doc2bow(d) for d in self.documents]
 
@@ -104,7 +74,11 @@ class TweetLDA:
         '''
         self.tokenize_documents()
         self.lemmatize_documents()
+        print("Documents have been tokenized.")
+
         self.compute_bigrams()
+        print("Bigrams have been computed.")
+
 
         self.generate_dictionary()
 

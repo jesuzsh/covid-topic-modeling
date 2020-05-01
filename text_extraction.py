@@ -2,6 +2,11 @@ import os
 import gzip
 import json
 import sqlite3
+import nltk
+nltk.download("wordnet")
+
+from nltk.tokenize import RegexpTokenizer
+from nltk.stem.wordnet import WordNetLemmatizer
 
 
 def create_database():
@@ -9,10 +14,13 @@ def create_database():
     Create a SQLite database to store the original tweets
     '''
     cnxn = sqlite3.connect('covid_tweets.db')
-
-    cursor = cnxn.cursor()
+    cursor = cnxn.cursor() 
     cursor.execute('''CREATE TABLE tweets
-                          (date text, filename text, tweet text)''')
+                          (tweet_id int, date text, filename text, tweet text)''')
+
+    cursor.execute('''CREATE TABLE token_tweets
+                          (tweet_id int, date text, tokenized_tweet text, has_bigram bool)''')
+
     cnxn.commit()
     cnxn.close()
 
@@ -113,12 +121,12 @@ def save_tweets(data, path_elems):
     cursor = cnxn.cursor()
 
     insert_query = '''
-        INSERT INTO tweets (date, filename, tweet)
-        VALUES (?, ?, ?)'''
+        INSERT INTO tweets (tweet_id, date, filename, tweet)
+        VALUES (?, ?, ?, ?)'''
 
     to_insert = []
     for tweet in data:
-        to_insert.append((date, filename, tweet['full_text']))
+        to_insert.append((tweet['id'], date, filename, tweet['full_text']))
 
     cursor.executemany(insert_query, to_insert)
 
@@ -126,7 +134,6 @@ def save_tweets(data, path_elems):
     cnxn.close()
 
     print(filename, "added to the database.")
-
 
 
 def process_files(files):
@@ -149,8 +156,100 @@ def process_files(files):
             save_tweets(data, (filename, date))
 
 
+def process_tweets():
+    '''
+    Tokenized and lemmatize all tweets
+
+    :update: [covid_tweets].[token_tweets]
+    '''
+    cnxn = sqlite3.connect("covid_tweets.db")
+    cursor = cnxn.cursor()
+
+    count_query = '''
+        SELECT count(tweets.tweet_id)
+        FROM tweets
+        LEFT JOIN token_tweets
+        ON tweets.tweet_id = token_tweets.tweet_id
+        WHERE token_tweets.tweet_id IS NULL'''
+
+    cursor.execute(count_query)
+    num_tweets = cursor.fetchone()[0]
+    print(num_tweets, "to be tokenized and lemmatized.")
+
+    insert_query = '''
+        INSERT INTO token_tweets (tweet_id, date, tokenized_tweet, has_bigram)
+        VALUES (?, ?, ?, ?)'''
+
+    query = '''
+        SELECT tweets.tweet_id, tweets.date, tweets.tweet
+        FROM tweets
+        LEFT JOIN token_tweets
+        ON tweets.tweet_id = token_tweets.tweet_id
+        WHERE token_tweets.tweet_id IS NULL'''
+
+    tokenizer = RegexpTokenizer(r'\w+')
+    lemmatizer = WordNetLemmatizer()
+
+    cursor.execute(query)
+    results = cursor.fetchall()
+
+    for tweet_id, date, tweet in results:
+        tokenized_tweet = tokenizer.tokenize(tweet.lower())
+
+        processed_tweet = []
+        for token in tokenized_tweet:
+            if not token.isnumeric() and len(token) > 1:
+                processed_tweet.append(lemmatizer.lemmatize(token))
+
+        processed_tweet = " ".join(processed_tweet)
+        cursor.execute(insert_query, (tweet_id, date, processed_tweet, False))
+        cnxn.commit()
+
+    cnxn.close()
+
+
+def compute_bigrams():
+    '''
+    Find and save bigrams living among the tweets
+
+    :update: [covid_tweets].[token_tweets]
+    '''
+    return
+
+
+def preprocess_documents():
+    '''
+    Tokenize and lemmatize the raw tweets already saved in the database. 
+
+    :update: [covid_tweets].[token_tweets]
+    '''
+    return
+
+
+def query_database(query, do_print=False):
+    cnxn = sqlite3.connect("covid_tweets.db")
+    cursor = cnxn.cursor()
+
+    cursor.execute(query)
+
+    if do_print:
+        print(cursor.fetchall())
+
+    cnxn.commit()
+    cnxn.close()
+
+
 if __name__ == "__main__":
-    files = find_files("./data")
-    
-    process_files(files)
+    try:
+        create_database()
+        print("Created database.")
+    except:
+        print("Database already created.")
+
+    #files = find_files("./data")
+    #process_files(files)
+
+    process_tweets()
+
+    #query_database("select * from token_tweets", True)
 
