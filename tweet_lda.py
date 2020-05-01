@@ -1,7 +1,10 @@
 import sqlite3
+import json
+import gzip
 from gensim.models.phrases import Phrases, Phraser
 from gensim.corpora import Dictionary
 from gensim.models import LdaModel
+from gensim.test.utils import datapath
 
 
 
@@ -9,6 +12,9 @@ class TweetLDA:
     def __init__(self, date):
         self.date = date
         self.documents = []
+
+        self.bigram = None
+        self.b_min = 90
 
         self.dictionary = None
         self.corpus = None
@@ -37,28 +43,13 @@ class TweetLDA:
         cnxn.close()
 
 
-    """
-    def compute_bigrams(self):
-        '''
-        Find and save bigrams located in the documents
-
-        :update: self.documents, list of Strings + bigrams
-        '''
-        bigram = Phrases(self.documents, min_count=90)
-
-        for i in range(len(self.documents)):
-            for token in bigram[self.documents[i]]:
-                if '_' in token:
-                    self.documents[i].append(token)
-    """
-
-
-    def compute_bigrams(self):
+    def compute_bigram(self):
         '''
         Find and save bigrams living among the tweets
 
         :update: [covid_tweets].[token_tweets]
         '''
+        print("Computing bigram.")
         cnxn = sqlite3.connect("covid_tweets.db")
         cursor = cnxn.cursor()
 
@@ -71,11 +62,6 @@ class TweetLDA:
         num_tweets = cursor.fetchone()[0]
         print(self.date, num_tweets, "to have bigram computed.")
 
-        update_query = '''
-            UPDATE token_tweets
-            SET tokenized_tweet = ?, has_bigram = 1
-            WHERE tweet_id = ?'''
-
         query = '''
             SELECT tweet_id, tokenized_tweet
             FROM token_tweets
@@ -84,32 +70,73 @@ class TweetLDA:
         cursor.execute(query, (self.date,))
         results = cursor.fetchall()
 
+        cnxn.close() 
+
         retokenized_tweets = []
         for tweet_id, tokenized_tweet in results:
             tweet_tokens = tokenized_tweet.split(" ")
             retokenized_tweets.append(tweet_tokens)
 
-        m_count = 90
-        phrases = Phrases(retokenized_tweets, min_count=m_count)
+        phrases = Phrases(retokenized_tweets, min_count=self.b_min)
         bigram = Phraser(phrases)
 
-        bigram.save(f"./tmp/{self.date}_bigram_model_{m_count}.pkl")
+        bigram.save(f"./tmp/{self.date}_bigram_model_{self.b_min}.pkl")
         print("Bigram computed.")
 
 
+    def load_bigram(self):
         '''
-        for i in range(num_tweets):
-            for token in bigram[retokenized_tweets[i]]:
+        Search for and load a pre-existing bigrams file
+
+        :update: self.bigram
+        '''
+        self.bigram = Phraser.load(f"./tmp/{self.date}_bigram_model_{self.b_min}.pkl")
+
+        print("Bigram loaded.")
+
+
+    def prepare_documents(self):
+        '''
+        Integrate bigrams into the documents so they can be used for the model
+
+        :update: self.documents
+        '''
+        print("Preparing documents.")
+        cnxn = sqlite3.connect("covid_tweets.db")
+        cursor = cnxn.cursor()
+
+        query = '''
+            SELECT tokenized_tweet
+            FROM token_tweets
+            WHERE date = ?'''
+
+        cursor.execute(query, (self.date,))
+        self.documents = cursor.fetchall()
+
+        cnxn.close()
+
+        self.documents = [tt.split(" ") for tt, in self.documents]
+
+        for i in range(len(self.documents)):
+            for token in self.bigram[self.documents[i]]:
                 if '_' in token:
-                    retokenized_tweets[i].append(token)
+                    self.documents[i].append(token)
+        
+        with gzip.open(f"./tmp/{self.date}_prepared_documents.json", 'wt', encoding="ascii") as zipfile:
+            json.dump(self.documents, zipfile)
+        print("Documents have been prepared.")
 
-            updated_tweet = " ".join(retokenized_tweet[i])
-            cursor.execute(insert_query, (updated_tweet, results[i][0]))
 
-            
-        cnxn.commit()
+    def load_documents(self):
         '''
-        cnxn.close() 
+        Read in ready-to-use documents list from json file
+
+        :update: self.documents
+        '''
+        with gzip.open(f"./tmp/{self.date}_prepared_documents.json.gz") as f:
+            self.documents = json.load(f)
+
+        print("Prepared documents have been loaded.")
 
 
     def generate_dictionary(self):
@@ -124,25 +151,6 @@ class TweetLDA:
         self.dictionary.filter_extremes(no_below=30, no_above=0.50)
 
         self.corpus = [self.dictionary.doc2bow(d) for d in self.documents]
-
-
-    def preprocess_documents(self):
-        '''
-        Tokenize, lemmatize, and find bigrams of the documents
-
-        :update: self.documents, list of Strings
-        :update: self.dictionary, gensim Dictionary object
-        :update: self.corpus, list of Bag-of-Word documents to be trained
-        '''
-        self.tokenize_documents()
-        self.lemmatize_documents()
-        print("Documents have been tokenized.")
-
-        self.compute_bigrams()
-        print("Bigrams have been computed.")
-
-
-        self.generate_dictionary()
 
 
     def generate_model(self):
@@ -167,6 +175,8 @@ class TweetLDA:
             eval_every=self.eval_every
         )
 
+        temp_file = datapath(f"./tmp/{self.date}_model")
+        self.model.save(temp_file)
 
         return self.model, self.corpus
 
