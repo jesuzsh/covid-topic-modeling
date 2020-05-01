@@ -1,12 +1,13 @@
 import sqlite3
-from gensim.models import Phrases
+from gensim.models.phrases import Phrases, Phraser
 from gensim.corpora import Dictionary
 from gensim.models import LdaModel
 
 
 
 class TweetLDA:
-    def __init__(self):
+    def __init__(self, date):
+        self.date = date
         self.documents = []
 
         self.dictionary = None
@@ -36,6 +37,7 @@ class TweetLDA:
         cnxn.close()
 
 
+    """
     def compute_bigrams(self):
         '''
         Find and save bigrams located in the documents
@@ -48,6 +50,66 @@ class TweetLDA:
             for token in bigram[self.documents[i]]:
                 if '_' in token:
                     self.documents[i].append(token)
+    """
+
+
+    def compute_bigrams(self):
+        '''
+        Find and save bigrams living among the tweets
+
+        :update: [covid_tweets].[token_tweets]
+        '''
+        cnxn = sqlite3.connect("covid_tweets.db")
+        cursor = cnxn.cursor()
+
+        count_query = '''
+            SELECT count(tweet_id)
+            FROM token_tweets
+            WHERE date = ?'''
+
+        cursor.execute(count_query, (self.date,))
+        num_tweets = cursor.fetchone()[0]
+        print(self.date, num_tweets, "to have bigram computed.")
+
+        update_query = '''
+            UPDATE token_tweets
+            SET tokenized_tweet = ?, has_bigram = 1
+            WHERE tweet_id = ?'''
+
+        query = '''
+            SELECT tweet_id, tokenized_tweet
+            FROM token_tweets
+            WHERE date = ?'''
+
+        cursor.execute(query, (self.date,))
+        results = cursor.fetchall()
+
+        retokenized_tweets = []
+        for tweet_id, tokenized_tweet in results:
+            tweet_tokens = tokenized_tweet.split(" ")
+            retokenized_tweets.append(tweet_tokens)
+
+        m_count = 90
+        phrases = Phrases(retokenized_tweets, min_count=m_count)
+        bigram = Phraser(phrases)
+
+        bigram.save(f"./tmp/{self.date}_bigram_model_{m_count}.pkl")
+        print("Bigram computed.")
+
+
+        '''
+        for i in range(num_tweets):
+            for token in bigram[retokenized_tweets[i]]:
+                if '_' in token:
+                    retokenized_tweets[i].append(token)
+
+            updated_tweet = " ".join(retokenized_tweet[i])
+            cursor.execute(insert_query, (updated_tweet, results[i][0]))
+
+            
+        cnxn.commit()
+        '''
+        cnxn.close() 
 
 
     def generate_dictionary(self):

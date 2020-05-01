@@ -208,15 +208,6 @@ def process_tweets():
     cnxn.close()
 
 
-def compute_bigrams():
-    '''
-    Find and save bigrams living among the tweets
-
-    :update: [covid_tweets].[token_tweets]
-    '''
-    return
-
-
 def preprocess_documents():
     '''
     Tokenize and lemmatize the raw tweets already saved in the database. 
