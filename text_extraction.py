@@ -19,7 +19,7 @@ def create_database():
                           (tweet_id int, date text, filename text, tweet text)''')
 
     cursor.execute('''CREATE TABLE token_tweets
-                          (tweet_id int, date text, tokenized_tweet text, has_bigram bool)''')
+                          (tweet_id int, date text, tokenized_tweet text, in_model bool)''')
 
     cnxn.commit()
     cnxn.close()
@@ -177,7 +177,7 @@ def process_tweets():
     print(num_tweets, "to be tokenized and lemmatized.")
 
     insert_query = '''
-        INSERT INTO token_tweets (tweet_id, date, tokenized_tweet, has_bigram)
+        INSERT INTO token_tweets (tweet_id, date, tokenized_tweet, in_model)
         VALUES (?, ?, ?, ?)'''
 
     query = '''
@@ -240,7 +240,23 @@ if __name__ == "__main__":
     #files = find_files("./data")
     #process_files(files)
 
-    process_tweets()
+    #process_tweets()
 
-    #query_database("select * from token_tweets", True)
+    """
+    query = '''
+        SELECT tweet_id, tokenized_tweet
+        FROM token_tweets
+        WHERE date = "2020-01"
+        AND in_model = 1
+        LIMIT 10000'''
+    """
 
+    """
+    query = '''
+        UPDATE token_tweets
+        SET in_model = 0
+        WHERE date = "2020-01"'''
+    """
+
+
+    #query_database(query)

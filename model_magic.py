@@ -7,16 +7,27 @@ if __name__ == "__main__":
     try:
         tlda.load_bigram()
     except Exception as e:
+        print(e)
         tlda.compute_bigram()
         tlda.load_bigram()
 
     try:
-        tlda.load_documents()
+        tlda.load_dictionary()
     except Exception as e:
+        print(e)
+        tlda.generate_dictionary()
+        tlda.load_dictionary()
+
+    try:
+        tlda.load_model()
+        tlda.update_model()
+    except ValueError:
+        print("The model is complete.")
+    except Exception as e:
+        print(e)
         tlda.prepare_documents()
+        tlda.generate_corpus()
+        tlda.generate_model()
 
-    tlda.generate_dictionary()
 
-    model, corpus = tlda.generate_model()
-
-    pprint(model.top_topics(corpus))
+    #tlda.analyze_model()
