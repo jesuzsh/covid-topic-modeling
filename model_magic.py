@@ -2,7 +2,7 @@ from tweet_lda import TweetLDA
 from pprint import pprint
 
 if __name__ == "__main__":
-    tlda = TweetLDA("2020-01")
+    tlda = TweetLDA("2020-02")
 
     try:
         tlda.load_bigram()
@@ -30,4 +30,4 @@ if __name__ == "__main__":
         tlda.generate_model()
 
 
-    #tlda.analyze_model()
+    tlda.analyze_model()

@@ -22,8 +22,8 @@ class TweetLDA:
         self.corpus = None
         
         # Training parameters
-        self.num_topics = 12
-        self.chunksize = 400000
+        self.num_topics = 6
+        self.chunksize = 120000
         self.passes = 20
         self.iterations = 400
         self.eval_every = None
@@ -98,7 +98,7 @@ class TweetLDA:
             FROM token_tweets
             WHERE date = ?
             AND in_model = 0
-            LIMIT 300000'''
+            LIMIT 100000'''
 
 
         cursor.execute(query, (self.date,))
@@ -119,24 +119,6 @@ class TweetLDA:
                     self.documents[i].append(token)
 
         print("Documents have been prepared.")
-
-        """
-        with gzip.open(f"./tmp/{self.date}_prepared_documents.json", 'wt', encoding="ascii") as zipfile:
-            json.dump(self.documents, zipfile)
-        print("Documents have been prepared.")
-
-
-    def load_documents(self):
-        '''
-        Read in ready-to-use documents list from json file
-
-        :update: self.documents
-        '''
-        with gzip.open(f"./tmp/{self.date}_prepared_documents.json.gz") as f:
-            self.documents = json.load(f)
-
-        print("Prepared documents have been loaded.")
-        """
 
 
     def update_documents(self):

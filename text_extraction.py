@@ -32,6 +32,9 @@ def find_files(filepath):
     :param filepath: String, the path in which to begin file collection
     :return: list of files to be processed
     '''
+    file_limit = 23
+    file_count = 0
+
     files = []
 
     if filepath[-1] != '/':
@@ -39,7 +42,15 @@ def find_files(filepath):
 
     for (dirpath, dirnames, filenames) in os.walk(filepath):
         for f in filenames:
-            files.append(dirpath + '/' + f)
+            if dirpath.split("/")[-1] == "2020-03":
+                files.append(dirpath + '/' + f)
+                file_count += 1
+
+                if file_count == file_limit:
+                    return files
+
+
+
 
     return files
 
@@ -208,15 +219,6 @@ def process_tweets():
     cnxn.close()
 
 
-def preprocess_documents():
-    '''
-    Tokenize and lemmatize the raw tweets already saved in the database. 
-
-    :update: [covid_tweets].[token_tweets]
-    '''
-    return
-
-
 def query_database(query, do_print=False):
     cnxn = sqlite3.connect("covid_tweets.db")
     cursor = cnxn.cursor()
@@ -237,10 +239,11 @@ if __name__ == "__main__":
     except:
         print("Database already created.")
 
-    #files = find_files("./data")
-    #process_files(files)
+    files = find_files("./data")
+    process_files(files)
 
-    #process_tweets()
+    #TODO still includes a has bigram column its null
+    process_tweets()
 
     """
     query = '''
