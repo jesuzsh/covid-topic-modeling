@@ -42,15 +42,12 @@ def find_files(filepath):
 
     for (dirpath, dirnames, filenames) in os.walk(filepath):
         for f in filenames:
-            if dirpath.split("/")[-1] == "2020-03":
+            if dirpath.split("/")[-1] == "2020-04":
                 files.append(dirpath + '/' + f)
                 file_count += 1
 
                 if file_count == file_limit:
                     return files
-
-
-
 
     return files
 
@@ -246,20 +243,10 @@ if __name__ == "__main__":
     process_tweets()
 
     """
-    query = '''
-        SELECT tweet_id, tokenized_tweet
-        FROM token_tweets
-        WHERE date = "2020-01"
-        AND in_model = 1
-        LIMIT 10000'''
-    """
-
-    """
-    query = '''
-        UPDATE token_tweets
-        SET in_model = 0
-        WHERE date = "2020-01"'''
-    """
+    query = '''CREATE TABLE modeled_topics
+            (date text, topic_num int, word text, probability real)'''
 
 
-    #query_database(query)
+
+    query_database(query)
+    """

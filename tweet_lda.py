@@ -23,7 +23,8 @@ class TweetLDA:
         
         # Training parameters
         self.num_topics = 6
-        self.chunksize = 120000
+        self.chunksize = 60000
+        #self.chunksize = 120000
         self.passes = 20
         self.iterations = 400
         self.eval_every = None
@@ -98,8 +99,7 @@ class TweetLDA:
             FROM token_tweets
             WHERE date = ?
             AND in_model = 0
-            LIMIT 100000'''
-
+            LIMIT 50000'''
 
         cursor.execute(query, (self.date,))
         results = cursor.fetchall()
@@ -279,7 +279,7 @@ class TweetLDA:
             SELECT tokenized_tweet
             FROM token_tweets
             WHERE date = ?
-            AND in_model = 1'''
+            AND in_model = 0'''
 
         cursor.execute(query, (self.date,))
         results = cursor.fetchall()
@@ -298,4 +298,43 @@ class TweetLDA:
 
         self.generate_corpus()
  
-        pprint(self.model.top_topics(self.corpus))
+        self.top_topics = self.model.top_topics(self.corpus)
+        pprint(self.top_topics)
+        self.save_top_topics()
+
+
+    def output_topics_json(self, values):
+        '''
+        Output json from a list of tuples
+        '''
+        to_json = []
+        for date, topic_num, word, probability in values:
+            to_json.append({"date": date, "topic_num": topic_num, "word": word, "probability": str(probability)})
+
+        with open(f"./tmp/{self.date}_topics.json", "w") as outfile:
+            json.dump(to_json, outfile)
+
+
+    def save_top_topics(self):
+        '''
+        Given the top topics, save them to the database.
+        '''
+        cnxn = sqlite3.connect("covid_tweets.db")
+        cursor = cnxn.cursor()
+
+        insert_query = '''
+            INSERT INTO modeled_topics (date, topic_num, word, probability)
+            VALUES (?, ?, ?, ?)'''
+
+        to_insert = [] 
+        for i, topic in enumerate(self.top_topics, 1):
+            for probability, word in topic[0]:
+                to_insert.append((self.date, i, word, probability)) 
+
+        self.output_topics_json(to_insert)
+        cursor.executemany(insert_query, to_insert)
+        cnxn.commit()
+        cnxn.close()
+
+
+

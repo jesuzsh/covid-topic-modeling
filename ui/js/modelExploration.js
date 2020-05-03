@@ -278,48 +278,19 @@ function RadarChart(id, data, options) {
 
 
 
-var margin = {top: 40, right: 40, bottom: 100, left: 40},
-        width = Math.min(700, window.innerWidth - 10) - margin.left - margin.right,
-        height = Math.min(width, window.innerHeight - margin.top - margin.bottom - 20);
+var jan_data = []
+var feb_data = []
+var mar_data = []
+var apr_data = []
+d3.queue()
+  .defer(d3.json, "./data/jan_topics.json")
+  .defer(d3.json, "./data/feb_topics.json")
+  .defer(d3.json, "./data/mar_topics.json")
+  .await(fancy_start);
 
-var data = [
-                  [
-                        {axis:"word1",value:0.22},
-                        {axis:"word2",value:0.28},
-                        {axis:"word3",value:0.29},
-                        {axis:"word4",value:0.17},
-                        {axis:"word5",value:0.22},
-                        {axis:"word6",value:0.02},
-                        {axis:"word7",value:0.21},
-                        {axis:"word8",value:0.22},
-                        {axis:"word9",value:0.28},
-                  ]];
 ////////////////////////////////////////////////////////////// 
 //////////////////// Draw the Chart ////////////////////////// 
 ////////////////////////////////////////////////////////////// 
-
-var color = d3.scaleOrdinal()
-        .range(["#EDC951","#CC333F","#00A0B0"]);
-        
-var radarChartOptions = {
-  w: window.innerWidth / 4,
-  h: window.innerHeight / 4,
-  margin: margin,
-  maxValue: 0.4,
-  levels: 4,
-  roundStrokes: true,
-  color: color
-};
-//Call function to draw the Radar chart
-RadarChart(".radarChartOne", data, radarChartOptions);
-RadarChart(".radarChartTwo", data, radarChartOptions);
-RadarChart(".radarChartThree", data, radarChartOptions);
-RadarChart(".radarChartFour", data, radarChartOptions);
-RadarChart(".radarChartFive", data, radarChartOptions);
-RadarChart(".radarChartSix", data, radarChartOptions);
-
-
-
 
 
 
@@ -366,12 +337,19 @@ var handle = slider.insert("circle", ".track-overlay")
     .attr("class", "handle")
     .attr("r", 9);
 
-slider.transition()
-    .duration(9000)
-    .tween("select_model", function() {
-      var i = d3.interpolate(4, 1);
-      return function(t) { select_model(i(t)); };
-    });
+
+function fancy_start(error, jan, feb, march) {
+    jan_data = jan
+    feb_data = feb
+    march_data = march
+    slider.transition()
+        .duration(9000)
+        .tween("select_model", function() {
+          var i = d3.interpolate(4, 1);
+          return function(t) { select_model(i(t)); };
+        });
+}
+
 
 function select_model(loc) {
   if (loc < 2) {
@@ -384,4 +362,46 @@ function select_model(loc) {
     var date = "2020-04";
   }
   handle.attr("cx", x(loc));
+  radar_up(date)
 }
+
+function radar_up(date) {
+    var margin = {top: 40, right: 40, bottom: 100, left: 40},
+            width = Math.min(700, window.innerWidth - 10) - margin.left - margin.right,
+            height = Math.min(width, window.innerHeight - margin.top - margin.bottom - 20);
+
+    var data = [[{axis:"word1",value:0.22},
+                    {axis:"word2",value:0.28},
+                    {axis:"word3",value:0.29},
+                    {axis:"word4",value:0.17},
+                    {axis:"word5",value:0.22},
+                    {axis:"word6",value:0.02},
+                    {axis:"word7",value:0.21},
+                    {axis:"word8",value:0.22},
+                    {axis:"word9",value:0.28},
+                  ]];
+     
+    var color = d3.scaleOrdinal()
+            .range(["#EDC951","#CC333F","#00A0B0"]);
+            
+    var radarChartOptions = {
+      w: window.innerWidth / 4,
+      h: window.innerHeight / 4,
+      margin: margin,
+      maxValue: 0.1,
+      levels: 3,
+      roundStrokes: true,
+      color: color
+    };
+
+    //Call function to draw the Radar charts
+    RadarChart(".radarChartOne", data, radarChartOptions);
+    RadarChart(".radarChartTwo", data, radarChartOptions);
+    RadarChart(".radarChartThree", data, radarChartOptions);
+    RadarChart(".radarChartFour", data, radarChartOptions);
+    RadarChart(".radarChartFive", data, radarChartOptions);
+    RadarChart(".radarChartSix", data, radarChartOptions);
+}
+
+
+
