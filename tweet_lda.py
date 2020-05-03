@@ -23,8 +23,8 @@ class TweetLDA:
         
         # Training parameters
         self.num_topics = 6
-        self.chunksize = 60000
-        #self.chunksize = 120000
+        #self.chunksize = 60000
+        self.chunksize = 120000
         self.passes = 20
         self.iterations = 400
         self.eval_every = None
@@ -99,7 +99,7 @@ class TweetLDA:
             FROM token_tweets
             WHERE date = ?
             AND in_model = 0
-            LIMIT 50000'''
+            LIMIT 100000'''
 
         cursor.execute(query, (self.date,))
         results = cursor.fetchall()

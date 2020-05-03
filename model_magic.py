@@ -19,7 +19,6 @@ if __name__ == "__main__":
         tlda.load_dictionary()
 
 
-    '''
     tlda.load_model()
     tlda.analyze_model()
     '''
@@ -34,5 +33,6 @@ if __name__ == "__main__":
         tlda.generate_corpus()
         tlda.generate_model()
 
+    '''
 
     #tlda.analyze_model()
