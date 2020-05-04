@@ -9,6 +9,19 @@ from nltk.tokenize import RegexpTokenizer
 from nltk.stem.wordnet import WordNetLemmatizer
 
 
+if __name__ == "__main__":
+    try:
+        create_database()
+        print("Created database.")
+    except:
+        print("Database already created.")
+
+    files = find_files("./data")
+    process_files(files)
+
+    process_tweets()
+
+
 def create_database():
     '''
     Create a SQLite database to store the original tweets
@@ -21,6 +34,8 @@ def create_database():
     cursor.execute('''CREATE TABLE token_tweets
                           (tweet_id int, date text, tokenized_tweet text, in_model bool)''')
 
+    cursor.execute('''CREATE TABLE modeled_topics
+                           (date text, topic_num int, word text, probability real)''')
     cnxn.commit()
     cnxn.close()
 
@@ -32,9 +47,6 @@ def find_files(filepath):
     :param filepath: String, the path in which to begin file collection
     :return: list of files to be processed
     '''
-    file_limit = 23
-    file_count = 0
-
     files = []
 
     if filepath[-1] != '/':
@@ -42,13 +54,8 @@ def find_files(filepath):
 
     for (dirpath, dirnames, filenames) in os.walk(filepath):
         for f in filenames:
-            if dirpath.split("/")[-1] == "2020-04":
-                files.append(dirpath + '/' + f)
-                file_count += 1
-
-                if file_count == file_limit:
-                    return files
-
+            files.append(dirpath + '/' + f)
+            
     return files
 
 
@@ -216,6 +223,7 @@ def process_tweets():
     cnxn.close()
 
 
+# Wrapper for quick sqlite3 debug queries
 def query_database(query, do_print=False):
     cnxn = sqlite3.connect("covid_tweets.db")
     cursor = cnxn.cursor()
@@ -228,25 +236,3 @@ def query_database(query, do_print=False):
     cnxn.commit()
     cnxn.close()
 
-
-if __name__ == "__main__":
-    try:
-        create_database()
-        print("Created database.")
-    except:
-        print("Database already created.")
-
-    files = find_files("./data")
-    process_files(files)
-
-    #TODO still includes a has bigram column its null
-    process_tweets()
-
-    """
-    query = '''CREATE TABLE modeled_topics
-            (date text, topic_num int, word text, probability real)'''
-
-
-
-    query_database(query)
-    """

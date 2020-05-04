@@ -8,7 +8,6 @@ from gensim.models import LdaModel
 from gensim.test.utils import datapath
 
 
-
 class TweetLDA:
     def __init__(self, date):
         self.date = date
@@ -23,8 +22,7 @@ class TweetLDA:
         
         # Training parameters
         self.num_topics = 6
-        #self.chunksize = 60000
-        self.chunksize = 120000
+        self.chunksize = 60000
         self.passes = 20
         self.iterations = 400
         self.eval_every = None
@@ -99,7 +97,7 @@ class TweetLDA:
             FROM token_tweets
             WHERE date = ?
             AND in_model = 0
-            LIMIT 100000'''
+            LIMIT 50000'''
 
         cursor.execute(query, (self.date,))
         results = cursor.fetchall()
@@ -279,7 +277,7 @@ class TweetLDA:
             SELECT tokenized_tweet
             FROM token_tweets
             WHERE date = ?
-            AND in_model = 0'''
+            AND in_model = 1'''
 
         cursor.execute(query, (self.date,))
         results = cursor.fetchall()
@@ -317,24 +315,11 @@ class TweetLDA:
 
     def save_top_topics(self):
         '''
-        Given the top topics, save them to the database.
+        Given the top topics, save them to a .json file
         '''
-        cnxn = sqlite3.connect("covid_tweets.db")
-        cursor = cnxn.cursor()
-
-        insert_query = '''
-            INSERT INTO modeled_topics (date, topic_num, word, probability)
-            VALUES (?, ?, ?, ?)'''
-
-        to_insert = [] 
+        to_save = [] 
         for i, topic in enumerate(self.top_topics, 1):
             for probability, word in topic[0]:
-                to_insert.append((self.date, i, word, probability)) 
+                to_save.append((self.date, i, word, probability)) 
 
-        self.output_topics_json(to_insert)
-        cursor.executemany(insert_query, to_insert)
-        cnxn.commit()
-        cnxn.close()
-
-
-
+        self.output_topics_json(to_save)

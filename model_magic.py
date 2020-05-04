@@ -1,8 +1,16 @@
+import argparse
+
 from tweet_lda import TweetLDA
 from pprint import pprint
 
 if __name__ == "__main__":
-    tlda = TweetLDA("2020-04")
+    parser = argparse.ArgumentParser(description="LDA on Covid Tweets.")
+    parser.add_argument('date', type=str)
+    parser.add_argument('choice', type=str, help="'analyze' or 'train' model")
+
+    args = parser.parse_args()
+
+    tlda = TweetLDA(args.date)
 
     try:
         tlda.load_bigram()
@@ -18,21 +26,19 @@ if __name__ == "__main__":
         tlda.generate_dictionary()
         tlda.load_dictionary()
 
-
-    tlda.load_model()
-    tlda.analyze_model()
-    '''
-    try:
+    if args.choice == 'analyze':
         tlda.load_model()
-        tlda.update_model()
-    except ValueError:
-        print("The model is complete.")
-    except Exception as e:
-        print(e)
-        tlda.prepare_documents()
-        tlda.generate_corpus()
-        tlda.generate_model()
-
-    '''
-
-    #tlda.analyze_model()
+        tlda.analyze_model()
+    elif args.choice == 'train':
+        try:
+            tlda.load_model()
+            tlda.update_model()
+        except ValueError:
+            print("The model is complete.")
+        except Exception as e:
+            print(e)
+            tlda.prepare_documents()
+            tlda.generate_corpus()
+            tlda.generate_model()
+    else:
+        print("Incorrect choice parameter.")
