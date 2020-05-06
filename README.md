@@ -1,4 +1,4 @@
-# Covid-19 Topic Modeling
+# COVID-19 Topic Modeling
 
 Using a [dataset of tweets](https://github.com/echen102/covid-19-tweetids) associated with COVID-19, Latent Dirichlet Allocation (LDA) is used to find the most common topics for each month of the dataset. Four unique models were trained representing the months January, February, March, and April.
 
@@ -13,12 +13,8 @@ Download dependencies in *requirements.txt*
 
 The major component needed to train and create models is *covid_tweets.db* a SQLite3 database that can be downloaded [here](https://drive.google.com/open?id=1AmQ9ydTWMns9AgWGXDqt6iH0yOlnV48Z)(1 Gb). Now that you have the needed data the command to train a model would be:
 
-'''bash
 python model\_magic.py <YY-MM> train
-'''
 
 A specific model can be analyzed with the following command:
 
-'''bash
 python model\_magic.py <YY-MM> analyze
-'''
