@@ -34,8 +34,6 @@ def create_database():
     cursor.execute('''CREATE TABLE token_tweets
                           (tweet_id int, date text, tokenized_tweet text, in_model bool)''')
 
-    cursor.execute('''CREATE TABLE modeled_topics
-                           (date text, topic_num int, word text, probability real)''')
     cnxn.commit()
     cnxn.close()
 
