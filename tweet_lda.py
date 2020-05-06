@@ -222,7 +222,7 @@ class TweetLDA:
 
         temp_file = datapath(f"{self.date}_model")
         print(temp_file)
-        self.model.save(temp_file)
+        self.model.save(f"./tmp/{self.date}_model")
         print("Model has been saved.")
 
         self.update_documents()
@@ -238,7 +238,8 @@ class TweetLDA:
         '''
         temp_file = datapath(f"{self.date}_model")
         print(temp_file)
-        self.model = LdaModel.load(temp_file)
+        #self.model = LdaModel.load(temp_file)
+        self.model = LdaModel.load(f"./tmp/{self.date}_model")
 
 
     def update_model(self):
