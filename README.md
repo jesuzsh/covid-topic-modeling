@@ -1,6 +1,6 @@
 # COVID-19 Topic Modeling
 
-Results and a rough situation can be found [here](https://jesuzsh.github.io/covid-tweets-lda/).
+Results and a rough visualization can be found [here](https://jesuzsh.github.io/covid-tweets-lda/).
 
 Using a [dataset of tweets](https://github.com/echen102/covid-19-tweetids)
 associated with COVID-19, Latent Dirichlet Allocation [LDA](https://radimrehurek.com/gensim_3.8.3/models/ldamodel.html)
@@ -28,3 +28,9 @@ Now that you have the needed data the command to train a model would be:
 A specific model can be analyzed with the following command:
 
     python model\_magic.py <YY-MM> analyze
+
+### Areas of improvement
+* Add descriptors to the visualization. For example, the percentages in the
+  visualization are a particular word's weight in its categorized topic.
+* Remove Stop words. The following words may be taking away from the
+  effectiveness of the LDA algorithm: to, by, on, in, it, of, etc.
