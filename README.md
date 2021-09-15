@@ -17,7 +17,9 @@ dictionary.
 
 ### Running the program
 
-Download dependencies in _requirements.txt_.
+Install dependencies:
+
+    pip install -r requirements.txt
 
 The major component needed to train and create models is _covid_tweets.db_ a
 SQLite3 database that can be downloaded [here](https://drive.google.com/open?id=1AmQ9ydTWMns9AgWGXDqt6iH0yOlnV48Z)(1 Gb).
